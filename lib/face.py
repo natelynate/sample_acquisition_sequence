@@ -17,7 +17,6 @@ class Face():
     def __init__(self, frame, boundingbox, landmarks, gaze_point=None):
         self._LANDMARK_INDICES_OF_INTEREST = LANDMARK_INDICES_OF_INTEREST
         self.frame = frame # original frame
-        self.filename = None
         self.boundingbox = boundingbox # bb around face region on original frame. List[Tuple[int, int], Tuple[int, int]]
         self.landmarks = [point for idx, point in enumerate(landmarks) if idx in self._LANDMARK_INDICES_OF_INTEREST]
         self.gaze_point = gaze_point # 2D Gaze target onscreen location 
@@ -54,7 +53,7 @@ class Face():
             json.dump(self.gaze_point, file)
 
 
-    def fit(self, size=(244, 244), padding=10, normalize=True):
+    def fit(self, size=(244, 244), padding=10):
         """Applies preprocessing steps to the current Face object. Preprocessing steps include cropping and resizing.
            landmark coordinates are aligned according to the undergoing transformation."""
         try:
