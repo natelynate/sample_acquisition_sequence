@@ -5,4 +5,4 @@ LANDMARK_INDICES_OF_INTEREST = [36, 37, 38, 39, 40, 41, # LEFT_EYE_POINTS
                                 22, 23, 24, 25, 26 ] # RIGHT_EYEBROW_POINTS  
 
 # Minimum Cumulated Eye Aspect Ratio for determining eye closure
-MINIMUM_EAR = 2.0
+MINIMUM_EAR = 0.15

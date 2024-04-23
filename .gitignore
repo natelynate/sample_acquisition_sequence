@@ -1,9 +1,6 @@
 shape_predictor_68_face_landmarks.dat
 ModelEnv/
 /data/frame
-/data/labels
-/data/landmark
-/data/lm_image
 __pycache__/
 images/
 component_test.py

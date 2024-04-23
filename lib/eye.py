@@ -1,13 +1,17 @@
-
+import numpy as np
+import json
+import os
 
 class Eye():
+    """
+    note: The frame required during initialization is a whole face not a cropped eye image
+    """
     def __init__(self, frame, landmarks):
         self.frame = frame
         self.landmarks = landmarks
         self.boundingbox = self._set_boundingbox()
         self.EAR = self.calc_EAR()
         
-
     def calc_EAR(self):
         """"""
         p1, p4 = self.landmarks[0][0], self.landmarks[3][0]
@@ -42,5 +46,15 @@ class Eye():
         max_y = min(max_y + padding, self.frame.shape[0] - 1)
 
         return self.frame[min_y:max_y+1, min_x:max_x+1]
-        
-    
+
+
+    def save(self, filename, base='./data/eye', normalize=True):
+        """Save current attributes at specified save directories. It automatically create subfolders 
+        (frame, boundingbox, landmark) if subfolder names are not found in the base argument
+        if msg argument is set to True, success/failure message will be displayed at the end. 
+        """
+        if normalize:
+            np.save(os.path.join(base, f'{filename}'), self.frame / 255.0)
+        else:
+            np.save(os.path.join(base, f'{filename}'), self.frame)
+

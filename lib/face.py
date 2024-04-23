@@ -34,14 +34,12 @@ class Face():
         os.makedirs(label_dir, exist_ok=True)
         return frame_dir, lm_img_dir, lm_dir, label_dir
 
-    def save(self, filename, base='./data', normalize=True):
+    def save(self, filename, base='./data/face/', normalize=True):
         """Save current attributes at specified save directories. It automatically create subfolders 
         (frame, boundingbox, landmark) if subfolder names are not found in the base argument
         if msg argument is set to True, success/failure message will be displayed at the end. 
         """
         frame_dir, lm_img_dir, lm_dir, label_dir = self._prep_save(base)
-        # cv2.imwrite(os.path.join(frame_dir, f'{filename}.jpg'), self.frame / 255.0) # Save frame as .jpg image. Normalized to 0-1 range.
-        # cv2.imwrite(os.path.join(lm_img_dir, f'{filename}.jpg'), generate_landmark_image(self.landmarks, (self.frame.shape[0], self.frame.shape[1]))) # Save landmark frame as .jpg image. Since it is binary, no normalization is performed.
         np.save(os.path.join(frame_dir, f'{filename}'), self.frame / 255.0)
         np.save(os.path.join(lm_img_dir, f'{filename}'), generate_landmark_image(self.landmarks, (self.frame.shape[0], self.frame.shape[1])))
 
