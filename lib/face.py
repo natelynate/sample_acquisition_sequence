@@ -8,53 +8,29 @@ import os
 import numpy as np
 import json
 from lib.preprocessing import generate_landmark_image
-from typing import Tuple, List
+from lib.eye import Eye
+from typing import Tuple
 from lib.configs import LANDMARK_INDICES_OF_INTEREST
 
 # These are indices of facial landmarks of interest that will be used for modeling
 
 class Face():
-    def __init__(self, frame, boundingbox, landmarks, gaze_point=None):
+    def __init__(self, frame, boundingbox, landmarks, gazepoint=None):
         self._LANDMARK_INDICES_OF_INTEREST = LANDMARK_INDICES_OF_INTEREST
         self.frame = frame # original frame
         self.boundingbox = boundingbox # bb around face region on original frame. List[Tuple[int, int], Tuple[int, int]]
         self.landmarks = [point for idx, point in enumerate(landmarks) if idx in self._LANDMARK_INDICES_OF_INTEREST]
-        self.gaze_point = gaze_point # 2D Gaze target onscreen location 
+        self.gazepoint = gazepoint # 2D Gaze target onscreen location 
+        self.eyes = None
 
-    def _prep_save(self, base):
-        frame_dir = os.path.join(base, 'frame')
-        lm_img_dir = os.path.join(base, 'lm_image')
-        lm_dir = os.path.join(base, 'landmark')
-        label_dir = os.path.join(base, 'labels')
-
-        # Confirm directory existence, else create new 
-        os.makedirs(frame_dir, exist_ok=True)
-        os.makedirs(lm_img_dir, exist_ok=True)
-        os.makedirs(lm_dir, exist_ok=True)
-        os.makedirs(label_dir, exist_ok=True)
-        return frame_dir, lm_img_dir, lm_dir, label_dir
-
-    def save(self, filename, base='./data/face/', normalize=True):
-        """Save current attributes at specified save directories. It automatically create subfolders 
-        (frame, boundingbox, landmark) if subfolder names are not found in the base argument
-        if msg argument is set to True, success/failure message will be displayed at the end. 
-        """
-        frame_dir, lm_img_dir, lm_dir, label_dir = self._prep_save(base)
-        np.save(os.path.join(frame_dir, f'{filename}'), self.frame / 255.0)
-        np.save(os.path.join(lm_img_dir, f'{filename}'), generate_landmark_image(self.landmarks, (self.frame.shape[0], self.frame.shape[1])))
-
-        # Write metainfo to the respective directories
-        with open(os.path.join(lm_dir, f'{filename}_lm.json'), 'w') as file: # 2d landmark coordinates
-            json.dump(self.landmarks, file)
-
-        with open(os.path.join(label_dir, f'{filename}_label.json'), 'w') as file:
-            json.dump(self.gaze_point, file)
-
-
-    def fit(self, size=(244, 244), padding=10):
+    def fit(self, size=(244, 244), padding=10, crop_eye=False):
         """Applies preprocessing steps to the current Face object. Preprocessing steps include cropping and resizing.
            landmark coordinates are aligned according to the undergoing transformation."""
         try:
+            if crop_eye: # Instantiate Eye objects
+                left_eye, right_eye = Eye(self.frame, self.landmarks[27:33]), Eye(self.frame, self.landmarks[33:40])
+                self.eyes = [left_eye, right_eye]
+
             # Perform Cropping 
             cropped = self._crop(padding=padding) 
             
@@ -120,3 +96,29 @@ class Face():
             n = threshold
         return n
 
+    def save(self, filename, base='./data/', normalize=True, get_eye=True):
+        if normalize: 
+            r = 255.0 
+        else: 
+            r = 1.0  
+        jpgfilename = '.'.join([filename, 'jpg'])
+        # Save face frames in both formats (jpg and npy)
+        np.save(os.path.join(base, 'face_image', filename), self.frame / r)
+        np.save(os.path.join(base, 'face_binary', filename), binary_img := generate_landmark_image(self.landmarks, (self.frame.shape[0], self.frame.shape[1])))
+        cv2.imwrite(os.path.join(base, 'face_image', jpgfilename), self.frame)
+        cv2.imwrite(os.path.join(base, 'face_binary', jpgfilename), binary_img)
+
+        if get_eye:
+            np.save(os.path.join(base, 'eye_image_left', filename), self.eyes[0].frame / r)
+            np.save(os.path.join(base, 'eye_image_right', filename), self.eyes[1].frame / r)
+
+            cv2.imwrite(os.path.join(base, 'eye_image_left', jpgfilename), self.eyes[0].frame)
+            cv2.imwrite(os.path.join(base, 'eye_image_right', jpgfilename), self.eyes[1].frame)
+
+        # Write metainfo to the respective directories
+        jsonfilename = '.'.join([filename, 'json'])
+        with open(os.path.join(base, 'landmark_coordinates', jsonfilename), 'w') as file: # 2d landmark coordinates
+            json.dump(self.landmarks, file) 
+            
+        with open(os.path.join(base, 'gazepoint', jsonfilename), 'w') as file:
+            json.dump(self.gazepoint, file) 
