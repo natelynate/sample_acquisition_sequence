@@ -35,17 +35,21 @@ def main(applicant_name, screen_width=1920, screen_height=1080):
     cv2.destroyAllWindows()
     
     cap = cv2.VideoCapture(0) # initialize webcam
+    estimator = FaceEstimator()
 
     # Display current media input
     message = "Adjust your face to be at the center of the screen. Do not move until the calibration is over. Press Enter to continue"
     while True:
         _, frame = cap.read()
         cv2.putText(frame, message, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        face = estimator.inspect(frame) # detect face
+        if face:
+            cv2.rectangle(frame, face.boundingbox[0], face.boundingbox[1], (0, 255, 0), 2)
+        
         cv2.imshow("Current Media Input", frame)
         if cv2.waitKey(1) == 13:
             break
 
-    estimator = FaceEstimator()
     
     # Prepare a grid of gaze points
     gap = 10
