@@ -23,7 +23,39 @@ class Face():
         self.gazepoint = gazepoint # 2D Gaze target onscreen location 
         self.eyes = None
 
-    def fit(self, size=(244, 244), padding=10, crop_eye=False):
+    def _prep_save(self, base):
+        frame_dir = os.path.join(base, 'frame')
+        lm_img_dir = os.path.join(base, 'lm_image')
+        lm_dir = os.path.join(base, 'landmark')
+        label_dir = os.path.join(base, 'labels')
+
+        # Confirm directory existence, else create new 
+        os.makedirs(frame_dir, exist_ok=True)
+        os.makedirs(lm_img_dir, exist_ok=True)
+        os.makedirs(lm_dir, exist_ok=True)
+        os.makedirs(label_dir, exist_ok=True)
+        return frame_dir, lm_img_dir, lm_dir, label_dir
+
+    def save(self, filename, base='./data', normalize=True):
+        """Save current attributes at specified save directories. It automatically create subfolders 
+        (frame, boundingbox, landmark) if subfolder names are not found in the base argument
+        if msg argument is set to True, success/failure message will be displayed at the end. 
+        """
+        frame_dir, lm_img_dir, lm_dir, label_dir = self._prep_save(base)
+        # cv2.imwrite(os.path.join(frame_dir, f'{filename}.jpg'), self.frame / 255.0) # Save frame as .jpg image. Normalized to 0-1 range.
+        # cv2.imwrite(os.path.join(lm_img_dir, f'{filename}.jpg'), generate_landmark_image(self.landmarks, (self.frame.shape[0], self.frame.shape[1]))) # Save landmark frame as .jpg image. Since it is binary, no normalization is performed.
+        np.save(os.path.join(frame_dir, f'{filename}'), self.frame / 255.0)
+        np.save(os.path.join(lm_img_dir, f'{filename}'), generate_landmark_image(self.landmarks, (self.frame.shape[0], self.frame.shape[1])))
+
+        # Write metainfo to the respective directories
+        with open(os.path.join(lm_dir, f'{filename}_lm.json'), 'w') as file: # 2d landmark coordinates
+            json.dump(self.landmarks, file)
+
+        with open(os.path.join(label_dir, f'{filename}_label.json'), 'w') as file:
+            json.dump(self.gaze_point, file)
+
+
+    def fit(self, size=(244, 244), padding=10, crop_eye=True):
         """Applies preprocessing steps to the current Face object. Preprocessing steps include cropping and resizing.
            landmark coordinates are aligned according to the undergoing transformation."""
         try:
